@@ -4,7 +4,7 @@ Playbooks that use [NoETL](https://github.com/noetl/noetl) as a local AI agent f
 
 Documentation: [Tutorial](https://github.com/noetl/agent-playbooks/wiki/Tutorial) · [Architecture](https://github.com/noetl/agent-playbooks/wiki/Architecture) · [Configuration Reference](https://github.com/noetl/agent-playbooks/wiki/Configuration-Reference) · [Security](https://github.com/noetl/agent-playbooks/wiki/Security) · [Troubleshooting](https://github.com/noetl/agent-playbooks/wiki/Troubleshooting)
 
-> **Status:** these playbooks need `kind: agent` in the `noetl` CLI, which is on the `feat/local-agent-tool` branches of [noetl/tools](https://github.com/noetl/tools) and [noetl/cli](https://github.com/noetl/cli) and not yet in a release. This README will name the first release that includes it.
+> **Status:** the agent tool is released in noetl-tools 4.1.0; the `noetl` CLI support is [noetl/cli#95](https://github.com/noetl/cli/pull/95). Until that ships, build the CLI from its `feat/local-agent-tool` branch (see the [Tutorial](https://github.com/noetl/agent-playbooks/wiki/Tutorial)). This README will name the first CLI release that includes it.
 
 ## How this differs from an always-on agent such as OpenClaw
 
