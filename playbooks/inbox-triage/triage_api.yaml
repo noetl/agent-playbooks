@@ -1,0 +1,45 @@
+# Inbox triage — Anthropic API billing.
+#
+# A native tool-use loop: Claude decides when to call `list_unread`, and each
+# call runs tools/list_unread.yaml as a sub-playbook.  NoETL sees every tool
+# call, so all mail access goes through playbooks you control.
+#
+#   export NOETL_CREDENTIAL_ANTHROPIC="$(cat ~/.config/noetl/anthropic.key)"
+#   noetl run playbooks/inbox-triage/triage_api.yaml --runtime local --set account=work
+apiVersion: noetl.io/v2
+kind: Playbook
+metadata:
+  name: inbox_triage_api
+executor:
+  profile: local
+  requires:
+    tools: [agent]
+workload:
+  account: work
+  model: claude-sonnet-5-5
+workflow:
+  - step: start
+    next:
+      - step: triage
+  - step: triage
+    tool:
+      kind: agent
+      framework: claude
+      model: "{{ workload.model }}"
+      system: >-
+        You triage email. List only the messages that need a reply or an action,
+        one line each with the reason. Say so plainly if nothing does.
+      prompt: Triage the unread mail in the {{ workload.account }} account.
+      max_turns: 6
+      auth:
+        type: api_key
+        credential: anthropic
+      tools:
+        - name: list_unread
+          description: List unread messages (sender, subject, snippet) for one mail account.
+          input_schema:
+            type: object
+            properties:
+              account: { type: string, description: Account name }
+            required: [account]
+          playbook: tools/list_unread.yaml

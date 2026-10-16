@@ -1,0 +1,6 @@
+# local run output
+*.log
+.noetl/
+# never commit credentials
+*.key
+.env

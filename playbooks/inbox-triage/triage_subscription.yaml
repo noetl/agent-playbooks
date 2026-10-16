@@ -1,0 +1,49 @@
+# Inbox triage — Claude subscription billing.
+#
+# Runs the official Claude Code CLI headless (`claude -p`), billed to the
+# account that CLI is signed in to.  NoETL fetches the mail itself (step
+# `fetch`) and hands it to Claude with no tools enabled, so the model can only
+# read what the playbook gives it.
+#
+#   claude            # once, to sign in
+#   noetl run playbooks/inbox-triage/triage_subscription.yaml --runtime local --set account=work
+apiVersion: noetl.io/v2
+kind: Playbook
+metadata:
+  name: inbox_triage_subscription
+executor:
+  profile: local
+  requires:
+    tools: [agent]
+workload:
+  account: work
+  model: claude-sonnet-5-5
+  claude_bin: claude
+workflow:
+  - step: start
+    next:
+      - step: fetch
+  # Stub mail, same shape as tools/list_unread.yaml.  Replace with `kind: http`
+  # steps against the Gmail API to read a real mailbox.
+  - step: fetch
+    tool:
+      kind: shell
+      cmds:
+        - >-
+          echo '[{"from":"ci@example.com","subject":"Build failed on main","snippet":"Job test failed at 06:12"},
+          {"from":"alex@example.com","subject":"Contract review by Friday?","snippet":"Can you send comments on the draft by Friday?"},
+          {"from":"news@example.com","subject":"Weekly digest","snippet":"Top stories this week"}]'
+    next:
+      - step: triage
+  - step: triage
+    tool:
+      kind: agent
+      framework: claude-code
+      model: "{{ workload.model }}"
+      claude_bin: "{{ workload.claude_bin }}"
+      system: >-
+        You triage email. List only the messages that need a reply or an action,
+        one line each with the reason. Say so plainly if nothing does.
+      prompt: |
+        Unread mail in the {{ workload.account }} account, as JSON:
+        {{ fetch.result }}

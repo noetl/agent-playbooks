@@ -1,0 +1,20 @@
+# User service that runs the inbox triage once.  Triggered by inbox-triage.timer.
+#
+# Install:
+#   mkdir -p ~/.config/systemd/user
+#   cp systemd/inbox-triage.* ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now inbox-triage.timer
+#
+# Edit WorkingDirectory if you cloned the repo elsewhere.  Results go to the
+# journal:  journalctl --user -u inbox-triage.service
+[Unit]
+Description=NoETL agent: daily inbox triage
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/agent-playbooks
+Environment=PATH=%h/.local/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin
+# API billing: the key file is read at run time and never stored in the unit.
+ExecStart=/bin/sh -c 'NOETL_CREDENTIAL_ANTHROPIC="$(cat %h/.config/noetl/anthropic.key)" exec noetl run playbooks/inbox-triage/triage_api.yaml --runtime local --json'
+# Subscription billing instead (needs `claude` signed in):
+# ExecStart=noetl run playbooks/inbox-triage/triage_subscription.yaml --runtime local --json

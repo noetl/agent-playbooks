@@ -1,0 +1,85 @@
+# agent-playbooks
+
+Playbooks that use [NoETL](https://github.com/noetl/noetl) as a local AI agent framework: a scheduled Claude agent on your own machine, written as YAML playbooks and run by the `noetl` CLI.
+
+> **Status:** these playbooks need `kind: agent` in the `noetl` CLI, which is on the `feat/local-agent-tool` branches of [noetl/tools](https://github.com/noetl/tools) and [noetl/cli](https://github.com/noetl/cli) and not yet in a release. This README will name the first release that includes it.
+
+## How this differs from an always-on agent such as OpenClaw
+
+| | always-on agent (e.g. OpenClaw) | these playbooks |
+|---|---|---|
+| Process | daemon running 24/7 with a heartbeat | nothing runs between jobs; a systemd timer starts `noetl run` |
+| Agent definition | prompts + installed skills | a YAML playbook you can read and diff |
+| What the model can touch | whatever the installed skills allow, often a shell | only the tools the playbook declares; each tool is another playbook |
+| Cost when idle | heartbeat calls | zero |
+| Billing | API key | API key (`framework: claude`) **or** your Claude subscription through the Claude Code CLI (`framework: claude-code`) |
+
+It does not replace a chat-first assistant you message all day. It covers scheduled, bounded jobs: triage, digests, reports.
+
+## Two ways to run Claude
+
+| | `framework: claude` | `framework: claude-code` |
+|---|---|---|
+| Runs | Anthropic Messages API, called directly from Rust | the official `claude` CLI, headless (`claude -p`) |
+| Billing | API credits (console.anthropic.com) | the account the CLI is signed in to, including Pro/Max |
+| Tools | `tools:` entries, each bound to a playbook; NoETL runs every call | Claude Code's own tools, granted with `allowed_tools` / `mcp_config`; default none |
+| Credential | `auth: {type: api_key, credential: anthropic}` | none in the playbook; uses the CLI sign-in |
+| Bound | `max_turns` (default 8) | step `timeout` (default 300 s) |
+
+## Quick start
+
+1. Build or install a `noetl` CLI that includes `kind: agent` (see Status above).
+2. Pick a billing mode:
+   - **API:** create a key at console.anthropic.com → API Keys, add credits, and store it:
+     ```bash
+     install -d -m 700 ~/.config/noetl
+     ```
+     Then put the key (starts with `sk-ant-api`) on one line in `~/.config/noetl/anthropic.key`, mode `600`.
+   - **Subscription:** install the Claude Code CLI and run `claude` once to sign in.
+3. Run a playbook:
+   ```bash
+   NOETL_CREDENTIAL_ANTHROPIC="$(cat ~/.config/noetl/anthropic.key)" noetl run playbooks/inbox-triage/triage_api.yaml --runtime local --set account=work
+   ```
+   ```bash
+   noetl run playbooks/inbox-triage/triage_subscription.yaml --runtime local --set account=work
+   ```
+
+Both read stub mail from `playbooks/inbox-triage/tools/list_unread.yaml`, so they run without mailbox credentials. A run of `triage_api.yaml` uses about 1,100 input and 170 output tokens.
+
+## Run it every morning
+
+`systemd/` has a user service and timer (07:30 daily, catches up after the machine was off):
+
+```bash
+mkdir -p ~/.config/systemd/user && cp systemd/inbox-triage.* ~/.config/systemd/user/
+```
+
+```bash
+systemctl --user daemon-reload && systemctl --user enable --now inbox-triage.timer
+```
+
+Read results with `journalctl --user -u inbox-triage.service`. To run it while logged out: `sudo loginctl enable-linger $USER`.
+
+## Layout
+
+```
+playbooks/
+  inbox-triage/
+    triage_api.yaml           # framework: claude — model calls tools, NoETL runs them
+    triage_subscription.yaml  # framework: claude-code — NoETL fetches, Claude reads
+    tools/list_unread.yaml    # agent tool (stub); swap in Gmail API http steps
+systemd/
+  inbox-triage.service
+  inbox-triage.timer
+```
+
+## Credentials and safety
+
+- **No ambient keys.** A `framework: claude` step must name a credential alias. In local mode the alias `anthropic` is read from `NOETL_CREDENTIAL_ANTHROPIC`; an unset or empty value stops the step before any API call.
+- **`claude-code` cannot fall back to API billing.** NoETL removes `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` from the CLI's environment.
+- **Model output is data.** Values the model passes to a tool playbook are never rendered as templates, so text quoted from an email cannot read your playbook variables.
+- **Tools are opt-in.** `claude-code` steps get no tools unless `allowed_tools` lists them.
+
+## License
+
+Apache-2.0, see [LICENSE](LICENSE).
