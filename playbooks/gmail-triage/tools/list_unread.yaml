@@ -10,7 +10,9 @@ metadata:
 workload:
   account: ""
   gmail_api: https://gmail.googleapis.com/gmail/v1
-  query: is:unread in:inbox newer_than:3d
+  # Primary tab only, last day: skips promotions, social and update mail,
+  # which is most of the volume and needs no action.
+  query: is:unread in:inbox category:primary newer_than:1d
   max_results: "15"
 workflow:
   - step: start
@@ -27,3 +29,18 @@ workflow:
       auth:
         type: google_oauth
         credential: "gmail-{{ workload.account }}"
+    next:
+      - step: compact
+  # Ids plus Gmail's estimate of the total, nothing else.
+  - step: compact
+    tool:
+      kind: rhai
+      code: |
+        let r = parse_json(list.result);
+        if r.status != 200 {
+          #{ error: r.status, detail: r.body }
+        } else {
+          let ids = [];
+          if r.body.messages != () { for m in r.body.messages { ids.push(m.id); } }
+          #{ ids: ids, more: r.body.nextPageToken != (), estimate: r.body.resultSizeEstimate }
+        }

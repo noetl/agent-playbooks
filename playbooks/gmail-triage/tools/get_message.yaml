@@ -22,3 +22,19 @@ workflow:
       auth:
         type: google_oauth
         credential: "gmail-{{ workload.account }}"
+    next:
+      - step: compact
+  # Hand the model only what triage needs (~250 bytes instead of the raw
+  # Gmail JSON), which is most of the per-run token cost.
+  - step: compact
+    tool:
+      kind: rhai
+      code: |
+        let r = parse_json(get.result);
+        if r.status != 200 {
+          #{ error: r.status, detail: r.body }
+        } else {
+          let h = #{};
+          for x in r.body.payload.headers { h[x.name] = x.value; }
+          #{ from: h.From, subject: h.Subject, date: h.Date, snippet: r.body.snippet }
+        }
