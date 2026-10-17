@@ -50,7 +50,7 @@ Both read stub mail from `playbooks/inbox-triage/tools/list_unread.yaml`, so the
 
 ## Your real Gmail
 
-`playbooks/gmail-triage/triage.yaml` triages several real Gmail accounts, read-only, with one OAuth credential per account. It needs noetl 5.2.0 or newer (`noetl credential` and `google_oauth` auth). Setup: [Connect Gmail](https://github.com/noetl/agent-playbooks/wiki/Connect-Gmail).
+`playbooks/gmail-triage/triage.yaml` triages several real Gmail accounts, read-only, with one OAuth credential per account. It needs noetl 5.3.0 or newer (`noetl credential`, `google_oauth` auth, and the `thinking: disabled` cost control). Setup: [Connect Gmail](https://github.com/noetl/agent-playbooks/wiki/Connect-Gmail).
 
 ```bash
 noetl credential google gmail-work --client-secret-file ~/.config/noetl/google-client.json
