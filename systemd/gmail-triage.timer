@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the NoETL Gmail triage every morning
+
+[Timer]
+OnCalendar=*-*-* 07:30:00
+# Run at next boot/login if the machine was off at 07:30.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

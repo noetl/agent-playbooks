@@ -1,0 +1,24 @@
+# Agent tool: sender, subject, date and snippet of one Gmail message.
+#
+# `format=metadata` returns headers and the snippet only — never the body —
+# which keeps tool output small and limits what injected text can carry.
+apiVersion: noetl.io/v2
+kind: Playbook
+metadata:
+  name: gmail_get_message
+workload:
+  account: ""
+  id: ""
+  gmail_api: https://gmail.googleapis.com/gmail/v1
+workflow:
+  - step: start
+    next:
+      - step: get
+  - step: get
+    tool:
+      kind: http
+      method: GET
+      url: "{{ workload.gmail_api }}/users/me/messages/{{ workload.id }}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date"
+      auth:
+        type: google_oauth
+        credential: "gmail-{{ workload.account }}"

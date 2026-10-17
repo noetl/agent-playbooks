@@ -48,6 +48,18 @@ It does not replace a chat-first assistant you message all day. It covers schedu
 
 Both read stub mail from `playbooks/inbox-triage/tools/list_unread.yaml`, so they run without mailbox credentials. A run of `triage_api.yaml` uses about 1,100 input and 170 output tokens.
 
+## Your real Gmail
+
+`playbooks/gmail-triage/triage.yaml` triages several real Gmail accounts, read-only, with one OAuth credential per account. It needs `noetl credential` and `google_oauth` auth from [noetl/cli#96](https://github.com/noetl/cli/pull/96). Setup: [Connect Gmail](https://github.com/noetl/agent-playbooks/wiki/Connect-Gmail).
+
+```bash
+noetl credential google gmail-work --client-secret-file ~/.config/noetl/google-client.json
+```
+
+```bash
+noetl run playbooks/gmail-triage/triage.yaml --runtime local --set accounts=work,personal,family
+```
+
 ## Run it every morning
 
 `systemd/` has a user service and timer (07:30 daily, catches up after the machine was off):
@@ -66,6 +78,10 @@ Read results with `journalctl --user -u inbox-triage.service`. To run it while l
 
 ```
 playbooks/
+  gmail-triage/
+    triage.yaml               # real Gmail, several accounts; see wiki "Connect Gmail"
+    tools/list_unread.yaml    # http + auth: google_oauth, credential gmail-<account>
+    tools/get_message.yaml    # From/Subject/Date/snippet only (format=metadata)
   inbox-triage/
     triage_api.yaml           # framework: claude — model calls tools, NoETL runs them
     triage_subscription.yaml  # framework: claude-code — NoETL fetches, Claude reads
@@ -73,6 +89,8 @@ playbooks/
 systemd/
   inbox-triage.service
   inbox-triage.timer
+  gmail-triage.service
+  gmail-triage.timer
 ```
 
 ## Credentials and safety

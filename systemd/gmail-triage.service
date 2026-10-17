@@ -1,0 +1,20 @@
+# User service: daily triage of real Gmail inboxes.  Triggered by gmail-triage.timer.
+#
+# Needs (see the wiki page "Connect Gmail"):
+#   noetl credential set anthropic
+#   noetl credential google gmail-<account> --client-secret-file <client.json>   # once per account
+# Credentials are read from ~/.config/noetl/credentials at run time; nothing
+# secret is in this file.  Edit WorkingDirectory and the account list.
+#
+# Install:
+#   cp systemd/gmail-triage.* ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now gmail-triage.timer
+# Results: journalctl --user -u gmail-triage.service
+[Unit]
+Description=NoETL agent: daily Gmail triage
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/agent-playbooks
+Environment=PATH=%h/.local/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/bin/sh -c 'exec noetl run playbooks/gmail-triage/triage.yaml --runtime local --set accounts=work,personal,family --json'

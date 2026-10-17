@@ -1,0 +1,29 @@
+# Agent tool: unread inbox message ids for one Gmail account.
+#
+# Input (from the model): account — the short name; the credential alias is
+# `gmail-<account>`, created with:
+#   noetl credential google gmail-<account> --client-secret-file <client.json>
+apiVersion: noetl.io/v2
+kind: Playbook
+metadata:
+  name: gmail_list_unread
+workload:
+  account: ""
+  gmail_api: https://gmail.googleapis.com/gmail/v1
+  query: is:unread in:inbox newer_than:3d
+  max_results: "15"
+workflow:
+  - step: start
+    next:
+      - step: list
+  - step: list
+    tool:
+      kind: http
+      method: GET
+      url: "{{ workload.gmail_api }}/users/me/messages"
+      params:
+        q: "{{ workload.query }}"
+        maxResults: "{{ workload.max_results }}"
+      auth:
+        type: google_oauth
+        credential: "gmail-{{ workload.account }}"
