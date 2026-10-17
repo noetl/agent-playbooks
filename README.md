@@ -30,7 +30,7 @@ It does not replace a chat-first assistant you message all day. It covers schedu
 
 ## Quick start
 
-1. Install noetl 5.1.0 or newer: `brew tap noetl/tap && brew install noetl`, the apt repo, `cargo install --bins noetl`, or `pip install "noetl>=5.3.0"` (details in the [Tutorial](https://github.com/noetl/agent-playbooks/wiki/Tutorial#1-get-a-noetl-cli-with-kind-agent)).
+1. Install noetl 5.1.0 or newer: `brew tap noetl/tap && brew install noetl`, the apt repo, `cargo install --bins noetl`, or `pip install "noetl>=5.3.2"` (details in the [Tutorial](https://github.com/noetl/agent-playbooks/wiki/Tutorial#1-get-a-noetl-cli-with-kind-agent)).
 2. Pick a billing mode:
    - **API:** create a key at console.anthropic.com → API Keys, add credits, and store it:
      ```bash
